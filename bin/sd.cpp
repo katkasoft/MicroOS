@@ -11,9 +11,9 @@ int main(int argc, char* argv[])
     if (argc > 1) {
         if (std::string(argv[1]) == "--help" || std::string(argv[1]) == "help") {
             std::cout << "MicroOS sd v0.1" << std::endl;
-            std::cout << "This tool allows you to scan direcroty/" << std::endl;
-            std::cout << "Usage: sd [dir] [args], sd --help/sd help" << std::endl;
-            std::cout << "Args: -f/--full-path: print full path of files" << std::endl;
+            std::cout << "This tool allows you to scan directory" << std::endl;
+            std::cout << "Usage: sd [dir] [args], sd --help/help" << std::endl;
+            std::cout << "Args: -f/--full-path - print full path of files" << std::endl;
             return 0;
         }
         path = argv[1];
