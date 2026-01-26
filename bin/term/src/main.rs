@@ -2,11 +2,15 @@ use std::io::{self, Write, Read};
 use std::fs::File;
 use std::process::Command;
 use std::path::Path;
+use device_query::{DeviceQuery, DeviceState, Keycode};
+use std::process::Child;
 
 fn main() {
-    println!("--- MicroOS Term v0.2 ---");
+    println!("--- MicroOS Term v0.2.1 ---");
 
     let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin"];
+
+    let device_state = DeviceState::new();
 
     loop {
         let current_dir = std::env::current_dir().unwrap();
@@ -72,17 +76,35 @@ fn main() {
             }
         }
 
+        let keys = device_state.get_keys();
+        if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::C) {
+            break;
+        }
         let child = Command::new(&target_path)
             .args(args)
             .spawn();
 
         match child {
             Ok(mut process) => {
-                process.wait().expect("term: command execution failed");
+                loop {
+                    match process.try_wait() {
+                        Ok(Some(status)) => break,
+                        Ok(None) => {
+                            let keys = device_state.get_keys();
+                            if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::C) {
+                                process.kill().expect("failed to kill process");
+                                break;
+                            }
+                            std::thread::sleep(std::time::Duration::from_millis(50));
+                        }
+                        Err(e) => {
+                            println!("error waiting: {}", e);
+                            break;
+                        }
+                    }
+                }
             }
-            Err(_) => {
-                println!("term: command '{}' not found.", cmd_name);
-            }
+            Err(_) => println!("term: command '{}' not found.", cmd_name),
         }
     }
 }
