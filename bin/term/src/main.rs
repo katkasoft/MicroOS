@@ -2,17 +2,23 @@ use std::io::{self, Write, Read};
 use std::fs::File;
 use std::process::Command;
 use std::path::Path;
-use device_query::{DeviceQuery, DeviceState, Keycode};
-use std::process::Child;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 fn main() {
     println!("--- MicroOS Term v0.2.1 ---");
 
     let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin"];
 
-    let device_state = DeviceState::new();
+    // Настройка сигнала
+    let interrupted = Arc::new(AtomicBool::new(false));
+    let i = Arc::clone(&interrupted);
+    ctrlc::set_handler(move || {
+        i.store(true, Ordering::SeqCst);
+    }).ok();
 
     loop {
+        interrupted.store(false, Ordering::SeqCst);
         let current_dir = std::env::current_dir().unwrap();
         print!("term {}> ", current_dir.display());
         io::stdout().flush().expect("term: std error!");
@@ -23,10 +29,7 @@ fn main() {
             .expect("term: error while reading input!");
 
         let parts: Vec<&str> = input.trim().split_whitespace().collect();
-
-        if parts.is_empty() {
-            continue;
-        }
+        if parts.is_empty() { continue; }
 
         let cmd_name = parts[0];
         let args = &parts[1..];
@@ -55,8 +58,6 @@ fn main() {
                     let mut content = String::new();
                     if let Ok(_) = file.read_to_string(&mut content) {
                         println!("{}", content);
-                    } else {
-                        println!("term: error reading help file.");
                     }
                 }
                 Err(_) => println!("term: help file not found in /etc/help.txt"),
@@ -65,7 +66,6 @@ fn main() {
         }
 
         let mut target_path = cmd_name.to_string();
-
         if !cmd_name.starts_with('/') {
             for dir in path_dirs {
                 let p = format!("{}/{}", dir, cmd_name);
@@ -76,10 +76,6 @@ fn main() {
             }
         }
 
-        let keys = device_state.get_keys();
-        if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::C) {
-            break;
-        }
         let child = Command::new(&target_path)
             .args(args)
             .spawn();
@@ -88,23 +84,21 @@ fn main() {
             Ok(mut process) => {
                 loop {
                     match process.try_wait() {
-                        Ok(Some(status)) => break,
+                        Ok(Some(_status)) => break,
                         Ok(None) => {
-                            let keys = device_state.get_keys();
-                            if keys.contains(&Keycode::LControl) && keys.contains(&Keycode::C) {
-                                process.kill().expect("failed to kill process");
+                            if interrupted.load(Ordering::SeqCst) {
+                                let _ = process.kill();
                                 break;
                             }
                             std::thread::sleep(std::time::Duration::from_millis(50));
                         }
-                        Err(e) => {
-                            println!("error waiting: {}", e);
-                            break;
-                        }
+                        Err(_) => break,
                     }
                 }
             }
-            Err(_) => println!("term: command '{}' not found.", cmd_name),
+            Err(_) => {
+                println!("term: command '{}' not found.", cmd_name);
+            }
         }
     }
 }
