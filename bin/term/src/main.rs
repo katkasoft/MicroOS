@@ -1,7 +1,7 @@
 use std::io::{self, Write, Read};
 use std::fs::File;
 use std::process::Command;
-use std::path::Path;
+use std::path::{Path, PathBuf}; // Добавил PathBuf для надежности
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -67,9 +67,9 @@ fn main() {
         let mut target_path = cmd_name.to_string();
         if !cmd_name.starts_with('/') {
             for dir in path_dirs {
-                let p = format!("{}/{}", dir, cmd_name);
-                if Path::new(&p).exists() {
-                    target_path = p;
+                let p = Path::new(dir).join(cmd_name);
+                if p.exists() {
+                    target_path = p.to_string_lossy().into_owned();
                     break;
                 }
             }
@@ -96,7 +96,7 @@ fn main() {
                 }
             }
             Err(_) => {
-                println!("term: command '{}' not found.", cmd_name);
+                println!("term: command '{}' not found. (searched as: {})", cmd_name, target_path);
             }
         }
     }
