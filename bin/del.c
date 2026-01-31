@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     if (argc >= 3 && (strcmp(argv[2], "-d") == 0 || strcmp(argv[2], "--dir") == 0)) {
         int rmdir_return = rmdir(argv[1]);
         if (rmdir_return == -1) {
-            printf("Error deleting directory: %s\n", strerror(errno));
+            fprintf(stderr, "del: error deleting directory: %s\n", strerror(errno));
             return 1;
         }
         return 0;
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     if (unlink(argv[1]) == 0) {
         return 0;
     } else {
-        printf("Error deleting file: %s\n", strerror(errno));
+        fprintf(stderr, " del: error deleting file: %s\n", strerror(errno));
         return 1;
     }
 
