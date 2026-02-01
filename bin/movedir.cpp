@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
                 fs::remove_all(source);
             } catch (const fs::filesystem_error& e2) {
                 std::cerr << "movedir: error while moving dir: " << e2.what() << std::endl;
+                return 1;
             }
         }
         return 0;
