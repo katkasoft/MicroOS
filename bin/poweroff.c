@@ -4,6 +4,7 @@
 
 int main() {
     printf("Turning off computer... \n");
+    sync();
     reboot(RB_POWER_OFF);
     return 0;
 }
