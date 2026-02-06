@@ -46,7 +46,8 @@ string get_cpu() {
     CPUData d1 = getCPUStats();
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     CPUData d2 = getCPUStats();
-    return to_string(calculateUsage(d1, d2)) + "%";
+    long long usage = (long long)calculateUsage(d1, d2); 
+    return to_string(usage) + "%";
 }
 
 string get_disk() {
@@ -81,7 +82,7 @@ int main(int argc, char* argv[]) {
         } else if (string(argv[1]) == "-r" || string(argv[1]) == "--ram") {
             string ram_usage = get_ram();
             if (ram_usage == "error") {
-                cerr << "Error while getting ram usage" << endl;
+                cerr << "sys-stat: rror while getting ram usage" << endl;
                 return 1;
             } else {
                 cout << ram_usage << endl;
@@ -90,7 +91,7 @@ int main(int argc, char* argv[]) {
         } else if (string(argv[1]) == "-c" || string(argv[1]) == "--cpu") {
             string cpu_percentage = get_cpu();
             if (cpu_percentage == "%") {
-                cerr << "Error while getting cpu usage" << endl;
+                cerr << "sys-stat: error while getting cpu usage" << endl;
                 return 1;
             } else {
                 cout << cpu_percentage << endl;
@@ -99,7 +100,7 @@ int main(int argc, char* argv[]) {
         } else if (string(argv[1]) == "-d" || string(argv[1]) == "--disk") {
             string disk_usage = get_disk();
             if (disk_usage == "error") {
-                cerr << "Error while getting disk usage" << endl;
+                cerr << "sys-stat: error while getting disk usage" << endl;
                 return 1;
             } else {
                 cout << disk_usage << endl;
