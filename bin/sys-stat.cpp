@@ -7,8 +7,6 @@
 #include <thread>
 #include <chrono>
 #include <sys/statvfs.h>
-#include <sys/sysinfo.h>
-
 using namespace std;
 
 struct CPUData {
@@ -17,12 +15,12 @@ struct CPUData {
 };
 
 CPUData getCPUStats() {
-    std::ifstream file("/proc/stat");
-    std::string line;
-    std::getline(file, line);
-    
-    std::string label;
-    std::vector<unsigned long long> values;
+    ifstream file("/proc/stat");
+    string line;
+    getline(file, line);
+
+    string label;
+    vector<unsigned long long> values;
     unsigned long long val;
     
     file.seekg(0);
@@ -60,7 +58,7 @@ string get_disk() {
     unsigned long long freeMB = (stats.f_bavail * stats.f_frsize) / (1024 * 1024);
     unsigned long long usedMB = totalMB - freeMB;
 
-    return std::to_string(usedMB) + "/" + std::to_string(totalMB) + " Mb";
+    return to_string(usedMB) + "/" + to_string(totalMB) + " Mb";
 }
 
 string get_ram() {
