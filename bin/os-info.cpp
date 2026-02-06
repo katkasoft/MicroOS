@@ -19,7 +19,12 @@ string kernel_info() {
     if (uname(&buffer) != 0) {
         return "error";
     }
-    return string(buffer.sysname) + " " + std::string(buffer.release);
+    string release_str(buffer.release);
+    size_t pos = release_str.find("MicroOS");
+    if (pos != string::npos && pos > 0) {
+        release_str.insert(pos, " ");
+    }
+    return string(buffer.sysname) + " " + release_str;
 }
 
 int main(int argc, char* argv[]) {
