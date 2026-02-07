@@ -9,14 +9,6 @@
 
 using namespace std;
 
-string get_host() {
-    char hostname[HOST_NAME_MAX + 1];
-    if (gethostname(hostname, sizeof(hostname)) == 0) {
-        return string(hostname);
-    }
-    return "error";
-}
-
 std::string get_cpu() {
     ifstream cpuFile("/proc/cpuinfo");
     if (!cpuFile.is_open()) return "error";
@@ -52,20 +44,10 @@ int main(int argc, char* argv[]) {
         if (string(argv[1]) == "--help" || string(argv[1]) == "help") {
             std::cout << "MicroOS hw-info v0.1" << std::endl;
             std::cout << "Usage: hw-info [args]" << std::endl;
-            std::cout << "args: -n/--name - show only hostname" << std::endl;
-            std::cout << "      -c/--cpu  - show only cpu model" << std::endl;
+            std::cout << "args: -c/--cpu  - show only cpu model" << std::endl;
             std::cout << "      -r/--ram  - show only total ram" << std::endl;
             std::cout << "      -d/--disk - show only total disk capacity" << std::endl;
             return 0;
-        } else if (string(argv[1]) == "-n" || string(argv[1]) == "--name") {
-            string host = get_host();
-            if (host == "error") {
-                cerr << "hw-info: error while getting hostname" << endl;
-                return 1;
-            } else {
-                cout << host << endl;
-                return 0;
-            }
         } else if (string(argv[1]) == "-c" || string(argv[1]) == "--cpu") {
             string cpu = get_cpu();
             if (cpu == "error") {
@@ -95,10 +77,6 @@ int main(int argc, char* argv[]) {
             }
         }
     } else {
-        string host = get_host();
-        if (host != "error") {
-            cout << "Hostname: " << host << endl;
-        }
         string cpu = get_cpu();
         if (cpu != "error") {
             cout << "CPU Model: " << cpu << endl;

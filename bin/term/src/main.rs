@@ -4,9 +4,12 @@ use std::process::Command;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use rustyline::error::ReadlineError;
+use rustyline::DefaultEditor;
 
 fn main() {
-    println!("--- MicroOS Term v0.2.1 ---");
+    println!("--- MicroOS v0.1 ---\n");
+    println!("--- MicroOS Term v0.2.2 ---");
 
     let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin"];
     
@@ -16,16 +19,46 @@ fn main() {
         i.store(true, Ordering::SeqCst);
     }).ok();
 
+    let mut rl = match DefaultEditor::new() {
+        Ok(editor) => Some(editor),
+        Err(_) => {
+            println!("term: [WARNING] Kernel lacks TTY support. Arrows/History disabled.");
+            None
+        }
+    };
+
     loop {
         interrupted.store(false, Ordering::SeqCst);
         let current_dir = std::env::current_dir().unwrap();
-        print!("term {}> ", current_dir.display());
-        io::stdout().flush().expect("term: std error!");
+        let prompt = format!("term {}> ", current_dir.display());
 
-        let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("term: error while reading input!");
+        let input = if let Some(ref mut editor) = rl {
+            match editor.readline(&prompt) {
+                Ok(line) => {
+                    if !line.trim().is_empty() {
+                        let _ = editor.add_history_entry(line.as_str());
+                    }
+                    line
+                },
+                Err(ReadlineError::Interrupted) => {
+                    println!("^C");
+                    continue;
+                },
+                Err(ReadlineError::Eof) => break,
+                Err(err) => {
+                    println!("term: readline error: {:?}", err);
+                    break;
+                }
+            }
+        } else {
+            print!("{}", prompt);
+            io::stdout().flush().expect("term: flush error");
+            let mut line = String::new();
+            if io::stdin().read_line(&mut line).is_err() {
+                break;
+            }
+            line
+        };
 
         let parts: Vec<&str> = input.trim().split_whitespace().collect();
         if parts.is_empty() { continue; }
@@ -55,7 +88,7 @@ fn main() {
             match File::open("/etc/help.txt") {
                 Ok(mut file) => {
                     let mut content = String::new();
-                    if let Ok(_) = file.read_to_string(&mut content) {
+                    if file.read_to_string(&mut content).is_ok() {
                         println!("{}", content);
                     }
                 }
@@ -78,7 +111,6 @@ fn main() {
         let child = Command::new(&target_path)
             .args(args)
             .spawn();
-
         match child {
             Ok(mut process) => {
                 loop {
