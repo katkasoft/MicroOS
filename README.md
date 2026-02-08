@@ -43,40 +43,49 @@ Use [Rufus](https://rufus.ie/) or [Balena Etcher](https://www.balena.io/etcher/)
 4. Type `poweroff` to shutdown
 
 ## Available Commands
+```
+Term:
+clear - clear terminal
+exit - exit term
+pcd - print current directory
+gtd [path] - go to directory
 
-### System
-- `poweroff` - Shutdown system
-- `restart` - Reboot system
-- `mount` - Mount filesystems
+System:
+poweroff - power off computer
+restart - restart computer
+mount [disk] [path] - mount disk
 
-### Information
-- `sys-stat` - System resource usage
-- `os-info` - OS and kernel information
-- `hw-info` - Hardware information
+Info:
+sys-stat [args] - get information about usage of resources
+os-info [args] - get information about OS version and kernel
+hw-info [args] - get information about hardware
 
-### File Operations
-- `create` - Create files/directories
-- `read` - Read file contents
-- `write` - Write to files
-- `copy`/`paste`/`cut` - File clipboard operations
-- `rename`/`del`/`moveto` - File management
-- `chperm` - Change permissions
-- `file-stat` - File statistics
+Files:
+create file [filename] - create file
+read [file] - read file content
+write [file] - write to file
+copy [file] - copy file
+paste [file] - paste file
+cut [file] - cut file to move it
+rename [oldname] [newname] - rename file
+del [file] - delete file
+moveto [file] [path] - move file
+chperm [file] [permissions] - change permissions of file
+file-stat [file] [args] - show file stats
 
-### Directory Operations
-- `sd` - Scan directory
-- `copydir`/`movedir`/`deldir` - Directory management
+Directories:
+sd [dir] [args] - scan directory
+rename [oldname] [newname] - rename directory
+create dir [name] - create directory
+copydir [dir] [destitation] - copy direcrory
+movedir [dir] [destitation] - move directory
+deldir [dir] - delete directory
+chperm [dir] [permissions] - change permissions of directory
 
-### Process Management
-- `lp` - List processes
-- `stop` - Stop process
-
-### Terminal Built-ins
-- `clear` - Clear screen
-- `exit` - Exit terminal
-- `pcd` - Print current directory
-- `gtd` - Change directory
-
+Processes:
+stop [pid] [sig] - stop process
+lp - list processes
+```
 
 ## Development Status
 
