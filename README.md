@@ -44,6 +44,8 @@ Use [Rufus](https://rufus.ie/) or [Balena Etcher](https://www.balena.io/etcher/)
 
 ## Available Commands
 ```
+MicroOS v0.1 help. Commands:
+
 Term:
 clear - clear terminal
 exit - exit term
@@ -72,6 +74,7 @@ del [file] - delete file
 moveto [file] [path] - move file
 chperm [file] [permissions] - change permissions of file
 file-stat [file] [args] - show file stats
+find [file] - find file
 
 Directories:
 sd [dir] [args] - scan directory
@@ -81,15 +84,18 @@ copydir [dir] [destitation] - copy direcrory
 movedir [dir] [destitation] - move directory
 deldir [dir] - delete directory
 chperm [dir] [permissions] - change permissions of directory
+find [dir] - find directory
 
 Processes:
 stop [pid] [sig] - stop process
 lp - list processes
+
+To see all type sd /bin or sd /usr/bin
 ```
 
 ## Development Status
 
-**Current version**: v0.1 (October 2024)
+**Current version**: v0.1 (Febrary 2026)
 
 **What works:**
 - Basic boot process
