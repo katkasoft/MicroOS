@@ -1,6 +1,6 @@
 use std::io::{self, Write, Read, BufRead, BufReader};
 use std::fs::File;
-use std::process::Command;
+use std::process::{Command, exit}; // Добавили exit
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -8,11 +8,28 @@ use std::env;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 
-fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>) -> bool {
+fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is_interactive: bool) -> bool {
     let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin"];
 
     match cmd_name {
         "exit" => return false,
+
+        "kernel-panic" => {
+            if !is_interactive {
+                println!("kernel-panic: only available in interactive mode.");
+                return true;
+            }
+
+            print!("Are you sure you want to trigger kernel panic? (y/N): ");
+            io::stdout().flush().unwrap();
+            
+            let mut answer = String::new();
+            io::stdin().read_line(&mut answer).unwrap();
+            
+            if answer.trim().to_lowercase() == "y" {
+                exit(2);
+            }
+        }
 
         "echo" => {
             println!("{}", args.join(" "));
@@ -118,14 +135,14 @@ fn main() {
                 if trimmed.is_empty() || trimmed.starts_with('#') { continue; }
 
                 let parts: Vec<&str> = trimmed.split_whitespace().collect();
-                if !exec_command(parts[0], &parts[1..], &interrupted) {
+                if !exec_command(parts[0], &parts[1..], &interrupted, false) {
                     break;
                 }
             }
         }
     } else {
-        println!("--- MicroOS v0.1 ---\n");
-        println!("--- MicroOS Term v0.2.2 ---");
+        println!("--- MicroOS v0.1 ---");
+        println!("--- MicroOS Term v0.3.1 ---");
 
         let mut rl = match DefaultEditor::new() {
             Ok(editor) => Some(editor),
@@ -171,7 +188,7 @@ fn main() {
             let parts: Vec<&str> = input.trim().split_whitespace().collect();
             if parts.is_empty() { continue; }
 
-            if !exec_command(parts[0], &parts[1..], &interrupted) {
+            if !exec_command(parts[0], &parts[1..], &interrupted, true) {
                 break;
             }
         }

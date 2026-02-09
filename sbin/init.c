@@ -59,7 +59,12 @@ int main() {
             waitpid(pid, &status, 0);
             
             if (WIFEXITED(status)) {
-                printf("[INIT]: term exited with status %d\n", WEXITSTATUS(status));
+                int exit_code = WEXITSTATUS(status);
+                if (exit_code == 2) {
+                    printf("[INIT]: triggering kernel panic...");
+                    return 1;
+                }
+                printf("[INIT]: term exited with status %d\n", exit_code);
             } else {
                 printf("[INIT]: term terminated abnormally\n");
             }
