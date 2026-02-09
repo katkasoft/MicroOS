@@ -1,12 +1,14 @@
 use std::io::{self, Write, Read, BufRead, BufReader};
 use std::fs::File;
-use std::process::{Command, exit}; // Добавили exit
+use std::process::{Command, exit};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::env;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
+use std::thread::sleep;
+    use std::time::Duration;
 
 fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is_interactive: bool) -> bool {
     let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin"];
@@ -119,11 +121,26 @@ fn main() {
     }).ok();
 
     if args_os.len() == 2 {
-        let file_path = &args_os[1];
+        let mut start_mode = false;
+        if args_os[1] == "start" {
+            start_mode = true;
+            println!("[START]: running start script...");
+        }
+        let mut file_path;
+        if (start_mode) {
+            file_path = "/sbin/start.msh";
+        } else {
+            file_path = &args_os[1];
+        }
         let file = match File::open(file_path) {
             Ok(f) => f,
             Err(e) => {
-                eprintln!("term: could not open script {}: {}", file_path, e);
+                if (start_mode) {
+                    eprintln!("[START]: fatal error: could not open /sbin/start.msh: {}. System is unable to load.", e);
+                    sleep(Duration::from_secs(5));
+                } else {
+                    eprintln!("term: could not open script {}: {}", file_path, e);
+                }
                 return;
             }
         };
@@ -131,18 +148,24 @@ fn main() {
         let reader = BufReader::new(file);
         for line_result in reader.lines() {
             if let Ok(line) = line_result {
+                if start_mode {
+                    println!("[START]: executing {}", line);
+                }
                 let trimmed = line.trim();
                 if trimmed.is_empty() || trimmed.starts_with('#') { continue; }
 
                 let parts: Vec<&str> = trimmed.split_whitespace().collect();
                 if !exec_command(parts[0], &parts[1..], &interrupted, false) {
+                    if start_mode {
+                        eprintln!("[START]: error while executing {}", line);
+                    }
                     break;
                 }
             }
         }
     } else {
         println!("--- MicroOS v0.1 ---");
-        println!("--- MicroOS Term v0.3.1 ---");
+        println!("--- MicroOS Term v0.4 ---");
 
         let mut rl = match DefaultEditor::new() {
             Ok(editor) => Some(editor),

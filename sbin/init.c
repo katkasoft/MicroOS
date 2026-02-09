@@ -23,7 +23,7 @@ int main() {
         printf("[INIT]: error mounting /dev: %s\n", strerror(errno));
     
     while(1) {
-        printf("[INIT]: forking for term...\n");
+        printf("[INIT]: forking for start...\n");
         pid_t pid = fork();
 
         if (pid < 0) {
@@ -47,15 +47,15 @@ int main() {
                 printf("[INIT]: failed to open /dev/console: %s\n", strerror(errno));
             }
 
-            printf("[INIT]: executing /bin/term\n");
-            char *args[] = {"/bin/term", NULL};
-            execv("/bin/term", args);
+            printf("[INIT]: executing start\n");
+            char *args[] = {"/sbin/term", "start", NULL};
+            execv("/sbin/term", args);
             
-            printf("[INIT]: execv /bin/term failed: %s\n", strerror(errno));
+            printf("[INIT]: execv /sbin/term start failed: %s\n", strerror(errno));
             exit(1);
         } else {
             int status;
-            printf("[INIT]: waiting for term (PID: %d)...\n", pid);
+            printf("[INIT]: waiting for start (PID: %d)...\n", pid);
             waitpid(pid, &status, 0);
             
             if (WIFEXITED(status)) {
@@ -64,12 +64,13 @@ int main() {
                     printf("[INIT]: triggering kernel panic...");
                     return 1;
                 }
-                printf("[INIT]: term exited with status %d\n", exit_code);
+                printf("[INIT]: start exited with status %d\n", exit_code);
             } else {
-                printf("[INIT]: term terminated abnormally\n");
+                printf("[INIT]: start terminated abnormally\n");
             }
 
             printf("[INIT]: shutting down...\n");
+            sync();
             reboot(RB_POWER_OFF);
         }
     }
