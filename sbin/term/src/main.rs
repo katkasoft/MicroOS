@@ -11,7 +11,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is_interactive: bool, is_fork: bool) -> bool {
-    let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin"];
+    let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/sbin/services"];
 
     match cmd_name {
         "exit" => return false,

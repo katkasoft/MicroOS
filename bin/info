@@ -1,0 +1,4 @@
+#!/sbin/term
+os-info
+sys-stat
+hw-info
