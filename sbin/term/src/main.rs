@@ -126,8 +126,8 @@ fn main() {
             start_mode = true;
             println!("[START]: running start script...");
         }
-        let mut file_path;
-        if (start_mode) {
+        let file_path;
+        if start_mode {
             file_path = "/sbin/start.msh";
         } else {
             file_path = &args_os[1];
@@ -135,7 +135,7 @@ fn main() {
         let file = match File::open(file_path) {
             Ok(f) => f,
             Err(e) => {
-                if (start_mode) {
+                if start_mode {
                     eprintln!("[START]: fatal error: could not open /sbin/start.msh: {}. System is unable to load.", e);
                     sleep(Duration::from_secs(5));
                 } else {
