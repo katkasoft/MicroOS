@@ -1,6 +1,6 @@
 use std::io::{self, Write, Read, BufRead, BufReader};
 use std::fs::File;
-use std::process::{Command, exit};
+use std::process::{Command, exit, Stdio};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -8,9 +8,9 @@ use std::env;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 use std::thread::sleep;
-    use std::time::Duration;
+use std::time::Duration;
 
-fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is_interactive: bool) -> bool {
+fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is_interactive: bool, is_fork: bool) -> bool {
     let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin"];
 
     match cmd_name {
@@ -84,22 +84,27 @@ fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is
 
             let child = Command::new(&target_path)
                 .args(args)
+                .stdin(if is_fork { Stdio::null() } else { Stdio::inherit() })
+                .stdout(if is_fork { Stdio::null() } else { Stdio::inherit() })
+                .stderr(if is_fork { Stdio::null() } else { Stdio::inherit() })
                 .spawn();
 
             match child {
                 Ok(mut process) => {
-                    loop {
-                        match process.try_wait() {
-                            Ok(Some(_status)) => break,
-                            Ok(None) => {
-                                if interrupted.load(Ordering::SeqCst) {
-                                    let _ = process.kill();
-                                    println!("^C (killed)");
-                                    break;
+                    if !is_fork {
+                        loop {
+                            match process.try_wait() {
+                                Ok(Some(_status)) => break,
+                                Ok(None) => {
+                                    if interrupted.load(Ordering::SeqCst) {
+                                        let _ = process.kill();
+                                        println!("^C (killed)");
+                                        break;
+                                    }
+                                    sleep(Duration::from_millis(50));
                                 }
-                                std::thread::sleep(std::time::Duration::from_millis(50));
+                                Err(_) => break,
                             }
-                            Err(_) => break,
                         }
                     }
                 }
@@ -122,22 +127,32 @@ fn main() {
 
     if args_os.len() == 2 {
         let mut start_mode = false;
+        let mut services_mode = false;
         if args_os[1] == "start" {
             start_mode = true;
-            println!("[START]: running start script...");
+            println!("[START]: launching start script...");
+        } else if args_os[1] == "services" {
+            services_mode = true;
+            println!("[SERVICES]: launching services script...");
         }
-        let file_path;
-        if start_mode {
-            file_path = "/sbin/start.msh";
+        
+        let file_path = if start_mode {
+            "/sbin/start.msh"
+        } else if services_mode {
+            "/sbin/services.msh"
         } else {
-            file_path = &args_os[1];
-        }
+            &args_os[1]
+        };
+
         let file = match File::open(file_path) {
             Ok(f) => f,
             Err(e) => {
                 if start_mode {
-                    eprintln!("[START]: fatal error: could not open /sbin/start.msh: {}. System is unable to load.", e);
-                    sleep(Duration::from_secs(5));
+                    eprintln!("[START]: fatal error: could not open /sbin/start.msh: {}. System is unable to load correctly.", e);
+                    println!("[START]: launching term...");
+                    let _ = Command::new("/sbin/term").spawn().expect("[START]: failed to load term");
+                } else if services_mode {
+                    eprintln!("[SERVICES]: fatal error: could not open /sbin/services.msh script. System is unable to load services.");
                 } else {
                     eprintln!("term: could not open script {}: {}", file_path, e);
                 }
@@ -148,24 +163,34 @@ fn main() {
         let reader = BufReader::new(file);
         for line_result in reader.lines() {
             if let Ok(line) = line_result {
-                if start_mode {
-                    println!("[START]: executing {}", line);
-                }
                 let trimmed = line.trim();
                 if trimmed.is_empty() || trimmed.starts_with('#') { continue; }
 
+                if start_mode {
+                    println!("[START]: executing {}", trimmed);
+                } else if services_mode {
+                    println!("[SERVICES]: launching {} service...", trimmed);
+                }
+
                 let parts: Vec<&str> = trimmed.split_whitespace().collect();
-                if !exec_command(parts[0], &parts[1..], &interrupted, false) {
-                    if start_mode {
-                        eprintln!("[START]: error while executing {}", line);
+                if services_mode {
+                    if !exec_command(parts[0], &parts[1..], &interrupted, false, true) {
+                        eprintln!("[SERVICES]: error while executing {} service", trimmed);
+                        break;
                     }
-                    break;
+                } else {
+                    if !exec_command(parts[0], &parts[1..], &interrupted, false, false) {
+                        if start_mode {
+                            eprintln!("[START]: error while executing {}", trimmed);
+                        }
+                        break;
+                    }
                 }
             }
         }
     } else {
         println!("--- MicroOS v0.1 ---");
-        println!("--- MicroOS Term v0.4 ---");
+        println!("--- MicroOS Term v0.5 ---");
 
         let mut rl = match DefaultEditor::new() {
             Ok(editor) => Some(editor),
@@ -211,7 +236,7 @@ fn main() {
             let parts: Vec<&str> = input.trim().split_whitespace().collect();
             if parts.is_empty() { continue; }
 
-            if !exec_command(parts[0], &parts[1..], &interrupted, true) {
+            if !exec_command(parts[0], &parts[1..], &interrupted, true, false) {
                 break;
             }
         }

@@ -22,6 +22,14 @@ int main() {
     if (mount("devtmpfs", "/dev", "devtmpfs", 0, NULL) < 0) 
         printf("[INIT]: error mounting /dev: %s\n", strerror(errno));
     
+    printf("[INIT]: forking for services...\n");
+    char* service_args[] = {(char*)"/sbin/term", (char*)"services", NULL};
+    if (fork() == 0) {
+        execv(service_args[0], service_args);
+        _exit(1);
+    }
+    wait(NULL);
+
     while(1) {
         printf("[INIT]: forking for start...\n");
         pid_t pid = fork();
