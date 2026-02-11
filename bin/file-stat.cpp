@@ -33,8 +33,8 @@ uintmax_t get_size(const string& path) {
 }
 
 void print_size(uintmax_t size) {
-    if (size >= 1024ULL * 1024 * 1024) {
-        cout << size / (1024ULL * 1024 * 1024) << " GB";
+    if (size >= 1024 * 1024 * 1024) {
+        cout << size / (1024 * 1024 * 1024) << " GB";
     } else if (size >= 1024 * 1024) {
         cout << size / (1024 * 1024) << " MB";
     } else if (size >= 1024) {
