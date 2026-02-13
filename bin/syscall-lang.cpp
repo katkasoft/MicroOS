@@ -1,14 +1,16 @@
 #include <cctype>
+#include <ctype.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include "../lib/syscalls.hpp"
 
 using namespace std;
 
 void execute_line(string line) {
-    long arg1 = 0; string arg1_temp = ""; bool arg1_ready = false;
+    long arg1 = 0; string arg1_temp = ""; bool arg1_ready = false; bool is_arg1_key = false;
     long arg2 = 0; string arg2_temp = ""; bool arg2_ready = false;
     long arg3 = 0; string arg3_temp = ""; bool arg3_ready = false;
     string arg3_string = ""; bool is_arg3_string = false;
@@ -25,7 +27,17 @@ void execute_line(string line) {
         }
         if (c == ' ' && !quote_opened) {
             if (!arg1_ready && !arg1_temp.empty()) {
-                arg1 = stol(arg1_temp);
+                if (is_arg1_key) {
+                    auto it = syscalls.find(arg1_temp);
+                    if (it != syscalls.end()) {
+                        arg1 = it->second;
+                    } else {
+                        cerr << "syscall-lang: no such key: " << arg1_temp << endl;
+                        exit(1);
+                    }
+                } else {
+                    arg1 = stol(arg1_temp);
+                }
                 arg1_ready = true;
                 arg_count++;
             } else if (arg1_ready && !arg2_ready && !arg2_temp.empty()) {
@@ -56,11 +68,11 @@ void execute_line(string line) {
             continue;
         }
         if (!arg1_ready) {
-            if (isdigit(c) || (c == '-' && arg1_temp.empty())) {
+            if (arg1_temp.empty()) {
                 arg1_temp += c;
-            } else if (!isspace(c)) {
-                cerr << "syscall-lang: error: first argument must be integer!" << endl;
-                exit(1);
+                if (!isdigit(c)) {
+                    is_arg1_key = true;
+                }
             }
         } else if (!arg2_ready) {
             if (isdigit(c) || (c == '-' && arg2_temp.empty())) {
@@ -206,17 +218,17 @@ int main(int argc, char* argv[]) {
     if (argc == 2) {
         string arg1 = argv[1];
         if (arg1 == "--help" || arg1 == "help") {
-            std::cout << "MicroOS syscall-lang v0.3" << std::endl;
+            std::cout << "MicroOS syscall-lang v0.4" << std::endl;
             std::cout << "Usage: syscall-lang [file]" << std::endl;
             std::cout << "A low-level language for direct Linux system calls execution." << std::endl;
             std::cout << "Syntax:" << std::endl;
-            std::cout << "  [syscall_number] [arg1] [arg2/\"string\"] [arg3] [arg4] [arg5] [arg6]" << std::endl;
+            std::cout << "  [syscall key/syscall number] [arg1] [arg2/\"string\"] [arg3] [arg4] [arg5] [arg6]" << std::endl;
             std::cout << "  - Minimum 2 arguments, maximum 7 arguments." << std::endl;
             std::cout << "  - Arguments must be integers." << std::endl;
             std::cout << "  - The third argument can be a string enclosed in double quotes." << std::endl;
             std::cout << "  - Comments start with #." << std::endl;
             std::cout << "Example (Hello World):" << std::endl;
-            std::cout << "  1 1 \"Hello, World!\\n\" 14" << std::endl;
+            std::cout << "  write 1 \"Hello, World!\\n\" 14" << std::endl;
             return 0;
         }
         ifstream file(arg1);
@@ -230,7 +242,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     } else {
-        cout << "MicroOS syscall-lang v0.3" << endl;
+        cout << "MicroOS syscall-lang v0.4" << endl;
         cout << "Type exit to quit" << endl;
         while (true) {
             string line;
