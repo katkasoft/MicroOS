@@ -117,6 +117,56 @@ fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is
     true
 }
 
+fn execute_script(file_path: &str, mode: &str, interrupted: &Arc<AtomicBool>) {
+    let is_start_mode = mode == "start";
+    let is_services_mode = mode == "services";
+    
+    let file = match File::open(file_path) {
+        Ok(f) => f,
+        Err(e) => {
+            if is_start_mode {
+                eprintln!("[START]: fatal error: could not open /sbin/start.msh: {}. System is unable to load correctly.", e);
+                println!("[START]: launching term...");
+                let _ = Command::new("/sbin/term").spawn().expect("[START]: failed to load term");
+            } else if is_services_mode {
+                eprintln!("[SERVICES]: fatal error: could not open /sbin/services.msh script. System is unable to load services.");
+            } else {
+                eprintln!("term: could not open script {}: {}", file_path, e);
+            }
+            return;
+        }
+    };
+    
+    let reader = BufReader::new(file);
+    for line_result in reader.lines() {
+        if let Ok(line) = line_result {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('#') { continue; }
+
+            if is_start_mode {
+                println!("[START]: executing {}", trimmed);
+            } else if is_services_mode {
+                println!("[SERVICES]: launching {} service...", trimmed);
+            }
+
+            let parts: Vec<&str> = trimmed.split_whitespace().collect();
+            if is_services_mode {
+                if !exec_command(parts[0], &parts[1..], interrupted, false, true) {
+                    eprintln!("[SERVICES]: error while executing {} service", trimmed);
+                    break;
+                }
+            } else {
+                if !exec_command(parts[0], &parts[1..], interrupted, false, false) {
+                    if is_start_mode {
+                        eprintln!("[START]: error while executing {}", trimmed);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
+
 fn main() {
     let args_os: Vec<String> = env::args().collect();
     let interrupted = Arc::new(AtomicBool::new(false));
@@ -128,11 +178,17 @@ fn main() {
     if args_os.len() == 2 {
         let mut start_mode = false;
         let mut services_mode = false;
+        let mut script_mode = "";
+        
         if args_os[1] == "start" {
             start_mode = true;
+            services_mode = false;
+            script_mode = "start";
             println!("[START]: launching start script...");
         } else if args_os[1] == "services" {
+            start_mode = false;
             services_mode = true;
+            script_mode = "services";
             println!("[SERVICES]: launching services script...");
         }
         
@@ -144,58 +200,17 @@ fn main() {
             &args_os[1]
         };
 
-        let file = match File::open(file_path) {
-            Ok(f) => f,
-            Err(e) => {
-                if start_mode {
-                    eprintln!("[START]: fatal error: could not open /sbin/start.msh: {}. System is unable to load correctly.", e);
-                    println!("[START]: launching term...");
-                    let _ = Command::new("/sbin/term").spawn().expect("[START]: failed to load term");
-                } else if services_mode {
-                    eprintln!("[SERVICES]: fatal error: could not open /sbin/services.msh script. System is unable to load services.");
-                } else {
-                    eprintln!("term: could not open script {}: {}", file_path, e);
-                }
-                return;
-            }
-        };
-        
-        let reader = BufReader::new(file);
-        for line_result in reader.lines() {
-            if let Ok(line) = line_result {
-                let trimmed = line.trim();
-                if trimmed.is_empty() || trimmed.starts_with('#') { continue; }
-
-                if start_mode {
-                    println!("[START]: executing {}", trimmed);
-                } else if services_mode {
-                    println!("[SERVICES]: launching {} service...", trimmed);
-                }
-
-                let parts: Vec<&str> = trimmed.split_whitespace().collect();
-                if services_mode {
-                    if !exec_command(parts[0], &parts[1..], &interrupted, false, true) {
-                        eprintln!("[SERVICES]: error while executing {} service", trimmed);
-                        break;
-                    }
-                } else {
-                    if !exec_command(parts[0], &parts[1..], &interrupted, false, false) {
-                        if start_mode {
-                            eprintln!("[START]: error while executing {}", trimmed);
-                        }
-                        break;
-                    }
-                }
-            }
+        if start_mode || services_mode {
+            execute_script(file_path, script_mode, &interrupted);
+        } else {
+            execute_script(file_path, "custom", &interrupted);
         }
     } else {
-        println!("--- MicroOS v0.1 ---");
-        println!("--- MicroOS Term v0.5 ---");
-
+        execute_script("/etc/term-onstart.msh", "custom", &interrupted);
         let mut rl = match DefaultEditor::new() {
             Ok(editor) => Some(editor),
             Err(_) => {
-                println!("term: [WARNING] Kernel lacks TTY support. Arrows/History disabled.");
+                println!("term: warning: Kernel lacks TTY support. Arrows/History disabled.");
                 None
             }
         };
