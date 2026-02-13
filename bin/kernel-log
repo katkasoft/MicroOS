@@ -1,0 +1,2 @@
+#!/sbin/term
+read /var/log/kernel-log
