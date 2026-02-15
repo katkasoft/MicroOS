@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <algorithm>
 #include <sstream>
+#include <poll.h>
+#include <chrono>
 #include "../../lib/calc.hpp"
 
 using namespace std;
@@ -22,6 +24,8 @@ private:
             tcgetattr(STDIN_FILENO, &oldt);
             newt = oldt;
             newt.c_lflag &= ~(ICANON | ECHO);
+            newt.c_cc[VMIN] = 0;
+            newt.c_cc[VTIME] = 0;
             tcsetattr(STDIN_FILENO, TCSANOW, &newt);
         } else {
             tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
@@ -42,15 +46,21 @@ private:
 
 public:
     void updateDisplay(string text) {
-        display = text;
-        if (display.length() > 13) display = display.substr(0, 13);
+        if (text.length() > 11) { 
+            display = text.substr(0, 11);
+        } else {
+            display = text;
+        }
     }
 
     void render() {
         clearScreen();
         cout << "  ┌─────────────┐ " << endl;
         cout << "  │ " << display;
-        for (int i = 0; i < 11 - display.length(); ++i) cout << " ";
+        int spaces = 11 - (int)display.length();
+        if (spaces > 0) {
+            for (int i = 0; i < spaces; ++i) cout << " ";
+        }
         cout << " │ " << endl;
         cout << "  └─────────────┘ " << endl;
         
@@ -85,22 +95,42 @@ public:
     }
 
     void run() {
+        atexit([]() {
+            struct termios t;
+            tcgetattr(STDIN_FILENO, &t);
+            t.c_lflag |= (ICANON | ECHO);
+            tcsetattr(STDIN_FILENO, TCSANOW, &t);
+            cout << "\033[?25h";
+            cout << "\033[2J\033[H";
+            cout.flush(); 
+        });
         setRawMode(true);
-        char ch;
+        cout << "\033[?25l";
+        auto lastPressTime = chrono::steady_clock::now();
+        bool needsRedraw = true;
         while (true) {
-            render();
-            ch = getchar();
-            if (ch == 'q') exit(0);
-            
-            lastPressed = ch;
-            onKeyPress(ch);
-
-            render();
-            usleep(50000); 
-            lastPressed = ' ';
+            if (needsRedraw) {
+                render();
+                needsRedraw = false;
+            }
+            auto now = chrono::steady_clock::now();
+            if (lastPressed != ' ' && chrono::duration_cast<chrono::milliseconds>(now - lastPressTime).count() > 150) {
+                lastPressed = ' ';
+                needsRedraw = true;
+            }
+            struct pollfd pfd = { STDIN_FILENO, POLLIN, 0 };
+            if (poll(&pfd, 1, 10) > 0) {
+                char ch;
+                if (read(STDIN_FILENO, &ch, 1) > 0) {
+                    if (ch == 'q') break;
+                    lastPressed = ch;
+                    lastPressTime = chrono::steady_clock::now();
+                    onKeyPress(ch);
+                    needsRedraw = true;
+                }
+            }
         }
         setRawMode(false);
-        clearScreen();
     }
 };
 
@@ -108,8 +138,8 @@ int main(int argc, char* argv[]) {
     if (argc == 2) {
         string arg = argv[1];
         if (arg == "--help" || arg == "help") {
-            cout << "MicroOS calc v0.1 beta" << endl;
-            cout << "Use 0-9, +, -, *, /, =, c keys to calculate" << endl;
+            cout << "MicroOS calc v0.1" << endl;
+            cout << "Use 0-9, +, -, *, /, =, ., c keys to calculate" << endl;
             cout << "q to quit" << endl;
             return 0;
         }
