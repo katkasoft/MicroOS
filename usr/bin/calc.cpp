@@ -138,13 +138,38 @@ int main(int argc, char* argv[]) {
     if (argc == 2) {
         string arg = argv[1];
         if (arg == "--help" || arg == "help") {
-            cout << "MicroOS calc v0.1" << endl;
-            cout << "Use 0-9, +, -, *, /, =, ., c keys to calculate" << endl;
+            cout << "MicroOS calc v0.2" << endl;
+            cout << "Usage:" << endl;
+            cout << "1. calc (without args) - enter TUI calculator interface" << endl;
+            cout << "- Use 0-9, +, -, *, /, =, ., c keys to calculate" << endl;
+            cout << "- q to quit" << endl;
+            cout << "2. calc [-c/--cli/cli] - enter calculator command line" << endl;
+            cout << "- q to quit" << endl;
+            cout << "2. calc [expression] - calculate expression" << endl;
+        } else if (arg == "-c" || arg == "--cli" || arg == "cli") {
+            cout << "MicroOS calc v0.2" << endl;
             cout << "q to quit" << endl;
-            return 0;
+            while (true) {
+                cout << "calc>";
+                string expr;
+                cin >> expr;
+                if (expr == "q") return 1;
+                try {
+                    cout << calc(expr) << endl;
+                } catch (const runtime_error& e) {
+                    cerr << "calculation exited with error: " << e.what() << endl;
+                }
+            }
+        } else {
+            try {
+                cout << calc(arg) << endl;
+            } catch (const runtime_error& e) {
+                cerr << "calculation exited with error: " << e.what() << endl;
+            }
         }
+    } else {
+        CalculatorTUI calc;
+        calc.run();
     }
-    CalculatorTUI calc;
-    calc.run();
     return 0;
 }
