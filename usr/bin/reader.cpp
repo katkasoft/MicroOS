@@ -77,6 +77,7 @@ public:
             if (i < screenRows - 1) buffer += "\r\n";
         }
 
+        buffer += "\x1b[H";
         buffer += "\x1b[?25h";
         write(STDOUT_FILENO, buffer.c_str(), buffer.size());
     }
