@@ -101,7 +101,8 @@ public:
 
         struct winsize w;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-        int max_rows = (w.ws_row > 10) ? w.ws_row - 10 : 10;
+        int max_rows = w.ws_row - 7;
+        if (max_rows < 1) max_rows = 1;
 
         cout << left << setw(8) << "PID" << setw(12) << "Memory" << "Process" << endl;
         for (int i = 0; i < (int)procs.size() && i < max_rows; ++i) {
@@ -173,6 +174,7 @@ public:
             }
         }
         KeyboardHandler::setNonCanonicalMode(false);
+        clearScreen();
     }
 };
 
