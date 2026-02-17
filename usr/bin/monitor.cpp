@@ -14,6 +14,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sstream>
+#include <algorithm>
+#include <sys/ioctl.h>
 
 using namespace std;
 
@@ -22,36 +24,38 @@ struct CPUData {
     unsigned long long idleTime;
 };
 
+struct ProcessInfo {
+    string pid;
+    string name;
+    double mem_mb;
+    string mem_str;
+};
+
 class SystemStats {
 private:
-    string get_memory_usage(int pid) {
+    double get_mem_value(int pid) {
         string path = "/proc/" + to_string(pid) + "/statm";
         ifstream file(path);
         long rss_pages = 0;
         if (file >> rss_pages >> rss_pages) {
             long page_size = sysconf(_SC_PAGESIZE);
-            double mb = (rss_pages * page_size) / (1024.0 * 1024.0);
-            stringstream ss;
-            ss << fixed << setprecision(1) << mb << " MB";
-            return ss.str();
+            return (rss_pages * page_size) / (1024.0 * 1024.0);
         }
-        return "0.0 MB";
+        return 0.0;
     }
+
 public:
     CPUData getCPUStats() {
         ifstream file("/proc/stat");
         string label;
         vector<unsigned long long> values;
         unsigned long long val;
-        
         file >> label;
         while (file >> val) {
             values.push_back(val);
         }
-
         unsigned long long idle = values[3] + values[4];
         unsigned long long total = accumulate(values.begin(), values.end(), 0ULL);
-        
         return {total, idle};
     }
 
@@ -72,31 +76,37 @@ public:
 
     void printProcessList() {
         DIR* dir = opendir("/proc");
-        if (!dir) {
-            cout << "Error reading /proc" << endl;
-            return;
-        }
+        if (!dir) return;
 
-        cout << left << setw(8) << "PID" << setw(12) << "Memory" << "Process" << endl;
-        cout << string(40, '-') << endl;
-
+        vector<ProcessInfo> procs;
         struct dirent* entry;
-        int count = 0;
-        while ((entry = readdir(dir)) && count < 20) {
+        while ((entry = readdir(dir))) {
             if (isdigit(entry->d_name[0])) {
-                string pid_str = entry->d_name;
-                int pid = stoi(pid_str);
-                string path = "/proc/" + pid_str + "/comm";
-                ifstream processFile(path);
-                string processName;
-                if (getline(processFile, processName)) {
-                    string mem = get_memory_usage(pid);
-                    cout << left << setw(8) << pid_str << setw(12) << mem << processName << endl;
-                    count++;
+                string pid_s = entry->d_name;
+                ifstream f("/proc/" + pid_s + "/comm");
+                string name;
+                if (getline(f, name)) {
+                    double m = get_mem_value(stoi(pid_s));
+                    stringstream ss;
+                    ss << fixed << setprecision(1) << m << " MB";
+                    procs.push_back({pid_s, name, m, ss.str()});
                 }
             }
         }
         closedir(dir);
+
+        sort(procs.begin(), procs.end(), [](const ProcessInfo& a, const ProcessInfo& b) {
+            return a.mem_mb > b.mem_mb;
+        });
+
+        struct winsize w;
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+        int max_rows = (w.ws_row > 10) ? w.ws_row - 10 : 10;
+
+        cout << left << setw(8) << "PID" << setw(12) << "Memory" << "Process" << endl;
+        for (int i = 0; i < (int)procs.size() && i < max_rows; ++i) {
+            cout << left << setw(8) << procs[i].pid << setw(12) << procs[i].mem_str << procs[i].name << endl;
+        }
     }
 };
 
@@ -109,7 +119,6 @@ public:
             newt = oldt;
             newt.c_lflag &= ~(ICANON | ECHO);
             tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-            
             int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
             fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
         } else {
@@ -121,9 +130,7 @@ public:
 
     static bool checkQuit() {
         char ch;
-        if (read(STDIN_FILENO, &ch, 1) > 0) {
-            return (ch == 'q' || ch == 'Q');
-        }
+        if (read(STDIN_FILENO, &ch, 1) > 0) return (ch == 'q' || ch == 'Q');
         return false;
     }
 };
@@ -173,7 +180,7 @@ int main(int argc, char* argv[]) {
     if (argc == 2) {
         string arg = argv[1];
         if (arg == "--help" || arg == "help") {
-            cout << "MicroOS monitor v0.2" << endl;
+            cout << "MicroOS monitor v0.3" << endl;
             cout << "q to quit" << endl;
         } else {
             cerr << "monitor: no such argument: " << arg << endl;
