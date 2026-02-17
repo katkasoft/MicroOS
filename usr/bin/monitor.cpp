@@ -13,6 +13,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sstream>
 
 using namespace std;
 
@@ -22,6 +23,20 @@ struct CPUData {
 };
 
 class SystemStats {
+private:
+    string get_memory_usage(int pid) {
+        string path = "/proc/" + to_string(pid) + "/statm";
+        ifstream file(path);
+        long rss_pages = 0;
+        if (file >> rss_pages >> rss_pages) {
+            long page_size = sysconf(_SC_PAGESIZE);
+            double mb = (rss_pages * page_size) / (1024.0 * 1024.0);
+            stringstream ss;
+            ss << fixed << setprecision(1) << mb << " MB";
+            return ss.str();
+        }
+        return "0.0 MB";
+    }
 public:
     CPUData getCPUStats() {
         ifstream file("/proc/stat");
@@ -35,7 +50,7 @@ public:
         }
 
         unsigned long long idle = values[3] + values[4];
-        unsigned long long total = std::accumulate(values.begin(), values.end(), 0ULL);
+        unsigned long long total = accumulate(values.begin(), values.end(), 0ULL);
         
         return {total, idle};
     }
@@ -62,18 +77,21 @@ public:
             return;
         }
 
-        cout << left << setw(8) << "PID" << "Process" << endl;
+        cout << left << setw(8) << "PID" << setw(12) << "Memory" << "Process" << endl;
+        cout << string(40, '-') << endl;
 
         struct dirent* entry;
         int count = 0;
         while ((entry = readdir(dir)) && count < 20) {
             if (isdigit(entry->d_name[0])) {
-                string pid = entry->d_name;
-                string path = "/proc/" + pid + "/comm";
+                string pid_str = entry->d_name;
+                int pid = stoi(pid_str);
+                string path = "/proc/" + pid_str + "/comm";
                 ifstream processFile(path);
                 string processName;
                 if (getline(processFile, processName)) {
-                    cout << left << setw(8) << pid << processName << endl;
+                    string mem = get_memory_usage(pid);
+                    cout << left << setw(8) << pid_str << setw(12) << mem << processName << endl;
                     count++;
                 }
             }
@@ -155,7 +173,7 @@ int main(int argc, char* argv[]) {
     if (argc == 2) {
         string arg = argv[1];
         if (arg == "--help" || arg == "help") {
-            cout << "MicroOS monitor v0.1" << endl;
+            cout << "MicroOS monitor v0.2" << endl;
             cout << "q to quit" << endl;
         } else {
             cerr << "monitor: no such argument: " << arg << endl;
