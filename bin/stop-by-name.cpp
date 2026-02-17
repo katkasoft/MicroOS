@@ -30,16 +30,18 @@ int main(int argc, char* argv[]) {
                     char* pid = entry->d_name;
                     string path = "/proc/" + string(pid) + "/comm";
                     ifstream processFile(path);
-                    stringstream process;
-                    process << processFile.rdbuf();
-                    processFile.close();
-                    if (processName == process.str()) {
-                        found = true;
-                        int intPid = stoi(pid);
-                        if (kill(intPid, sig) == -1) {
-                            cerr << "stop-by-name: error while killing process" << endl;
-                            return 1;
+                    string commName;
+                    if (getline(processFile, commName)) {
+                        if (processName == commName) {
+                            found = true;
+                            int intPid = stoi(pid);
+                            if (kill(intPid, sig) == -1) {
+                                cerr << "stop-by-name: error while killing process" << endl;
+                                return 1;
+                            }
                         }
+                    } else {
+                        cerr << "stop-by-name: error while opening process file: " << path << endl;
                     }
                 }
             }
