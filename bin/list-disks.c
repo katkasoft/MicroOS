@@ -1,31 +1,24 @@
-#include <libudev.h>
 #include <stdio.h>
+#include <dirent.h>
 #include <string.h>
 
 int main() {
-    struct udev *udev = udev_new();
-    if (!udev) {
-        perror("list-disks: error while getting udev");
+    const char* path = "/sys/block/";
+    DIR* dir = opendir(path);
+    if (dir == NULL) {
+        perror("list-disks: could not open /sys/block/ directory");
         return 1;
     }
-    struct udev_enumerate *enumerate = udev_enumerate_new(udev);
-    udev_enumerate_add_match_subsystem(enumerate, "block");
-    udev_enumerate_scan_devices(enumerate);
-    struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
-    struct udev_list_entry *entry;
-    udev_list_entry_foreach(entry, devices) {
-        const char *path = udev_list_entry_get_name(entry);
-        struct udev_device *dev = udev_device_new_from_syspath(udev, path);
-        const char *type = udev_device_get_devtype(dev);
-        if (type != NULL && strcmp(type, "disk") == 0) {
-            const char *node = udev_device_get_devnode(dev);
-            if (node) {
-                printf("%s\n", node);
-            }
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        const char* name = entry->d_name;
+        if (strcmp(name, ".") == 0 || 
+            strcmp(name, "..") == 0 || 
+            strncmp(name, "loop", 4) == 0) {
+            continue;
         }
-        udev_device_unref(dev);
+        printf("/dev/%s\n", name);
     }
-    udev_enumerate_unref(enumerate);
-    udev_unref(udev);
+    closedir(dir);
     return 0;
 }
