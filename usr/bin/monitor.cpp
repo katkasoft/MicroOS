@@ -109,7 +109,7 @@ public:
 
         struct winsize w;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-        int max_rows = w.ws_row - 7;
+        int max_rows = w.ws_row - 5;
         if (max_rows < 1) max_rows = 1;
 
         cout << left << setw(8) << "PID" << setw(12) << "Memory" << "Process" << endl;
