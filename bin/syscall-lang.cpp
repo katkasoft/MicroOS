@@ -374,6 +374,7 @@ int main(int argc, char* argv[]) {
             while (getline(file, line)) {
                 execute_line(line);
             }
+            file.close();
         } else {
             cerr << "syscall-lang: error while opening file " << arg1 << endl;
             return 1;
