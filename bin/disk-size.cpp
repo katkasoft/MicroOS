@@ -21,7 +21,6 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         close(fd);
-    
         int gb = 1024.0 * 1024.0 * 1024.0;
         int mb = 1024.0 * 1024.0;
         int kb = 1024.0;
