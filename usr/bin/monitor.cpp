@@ -39,7 +39,7 @@ private:
         long rss_pages = 0;
         if (file >> rss_pages >> rss_pages) {
             long page_size = sysconf(_SC_PAGESIZE);
-            return (rss_pages * page_size) / (1024.0 * 1024.0);
+            return rss_pages * page_size;
         }
         return 0.0;
     }
@@ -88,7 +88,15 @@ public:
                 if (getline(f, name)) {
                     double m = get_mem_value(stoi(pid_s));
                     stringstream ss;
-                    ss << fixed << setprecision(1) << m << " MB";
+                    int mb = 1024.0*1024.0;
+                    int kb = 1024.0;
+                    if (m >= mb) {
+                        ss << fixed << setprecision(1) << m/mb << " MB";
+                    } else if (m >= kb) {
+                        ss << fixed << setprecision(1) << m/kb << " KB";
+                    } else {
+                        ss << fixed << setprecision(1) << m << "  B";
+                    }
                     procs.push_back({pid_s, name, m, ss.str()});
                 }
             }
@@ -182,7 +190,7 @@ int main(int argc, char* argv[]) {
     if (argc == 2) {
         string arg = argv[1];
         if (arg == "--help" || arg == "help") {
-            cout << "MicroOS monitor v0.3" << endl;
+            cout << "MicroOS monitor v0.3.1" << endl;
             cout << "q to quit" << endl;
         } else {
             cerr << "monitor: no such argument: " << arg << endl;
