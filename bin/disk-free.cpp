@@ -22,15 +22,14 @@ int main (int argc, char* argv[]) {
         while ((mnt = getmntent(fp)) != nullptr) {
             if (device_name == mnt->mnt_fsname) {
                 mount_path = mnt->mnt_dir;
-                endmntent(fp);
                 break;
             }
         }
+        endmntent(fp);
         if (mount_path == "") {
             cerr << "disk-free: error: " << device_name << " not mounted";
             return 1;
         }
-        endmntent(fp);
 
         struct statvfs buf;
         if (statvfs(mount_path.c_str(), &buf) == 0) {            
