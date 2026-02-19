@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         long long size = 0;
-        if (ioctl(fd, BLKGETSIZE64, &size_bytes) == -1) {
+        if (ioctl(fd, BLKGETSIZE64, &size) == -1) {
             cerr << "disk-size: error getting disk size" << endl;
             close(fd);
             return 1;
