@@ -28,7 +28,7 @@ int main (int argc, char* argv[]) {
         }
         endmntent(fp);
         if (mount_path == "") {
-            cerr << "disk-usage: error: " << device_name << " not mounted";
+            cerr << "disk-usage: error: " << device_name << " not mounted" << endl;
             return 1;
         }
 
@@ -50,13 +50,13 @@ int main (int argc, char* argv[]) {
                 cout << used_size << " B / ";
             }
             if (total_size >= gb) {
-                cout << total_size/gb << " GB";
+                cout << total_size/gb << " GB" << endl;
             } else if (total_size >= mb) {
-                cout << total_size/mb << " MB";
+                cout << total_size/mb << " MB" << endl;
             } else if (total_size >= kb) {
-                cout << total_size/kb << " KB";
+                cout << total_size/kb << " KB" << endl;
             } else {
-                cout << total_size << " B";
+                cout << total_size << " B" << endl;
             }
         } else {
             cerr << "disk-usage: error while getting disk usage" << endl;

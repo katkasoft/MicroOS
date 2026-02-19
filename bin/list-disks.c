@@ -3,10 +3,10 @@
 #include <string.h>
 
 int main() {
-    const char* path = "/sys/block/";
+    const char* path = "/sys/class/block/"; 
     DIR* dir = opendir(path);
     if (dir == NULL) {
-        perror("list-disks: could not open /sys/block/ directory");
+        perror("list-disks: could not open /sys/class/block/ directory");
         return 1;
     }
     struct dirent* entry;
@@ -15,6 +15,9 @@ int main() {
         if (strcmp(name, ".") == 0 || 
             strcmp(name, "..") == 0 || 
             strncmp(name, "loop", 4) == 0) {
+            continue;
+        }
+        if (strncmp(name, "ram", 3) == 0) {
             continue;
         }
         printf("/dev/%s\n", name);

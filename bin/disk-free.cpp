@@ -27,7 +27,7 @@ int main (int argc, char* argv[]) {
         }
         endmntent(fp);
         if (mount_path == "") {
-            cerr << "disk-free: error: " << device_name << " not mounted";
+            cerr << "disk-free: error: " << device_name << " not mounted" << endl;
             return 1;
         }
 
@@ -45,7 +45,7 @@ int main (int argc, char* argv[]) {
             } else if (free_size >= kb) {
                 cout << free_size/kb << " KB";
             } else {
-                cout << free_size << " B";
+                cout << free_size << " B" << endl;
             }
         } else {
             cerr << "disk-free: error while getting disk free space" << endl;
