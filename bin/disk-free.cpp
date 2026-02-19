@@ -3,6 +3,7 @@
 #include <mntent.h>
 #include <string>
 #include <sys/statvfs.h>
+#include <cstdint>
 
 namespace fs = std::filesystem;
 using namespace std;
