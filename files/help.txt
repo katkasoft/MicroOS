@@ -73,6 +73,7 @@ tictactoe - play tictactoe game
 
 Time:
 time - show full time and date
+time [format] - show time/date by format
 
 System scripts:
 /microos/system/services.msh - services script
