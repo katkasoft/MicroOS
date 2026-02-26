@@ -1,4 +1,4 @@
-#!/sbin/term
+#!/microos/system/term
 os-info
 sys-stat
 hw-info

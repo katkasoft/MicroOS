@@ -5,7 +5,7 @@
 #include <string>
 #include <unistd.h>
 #include <sys/syscall.h>
-#include "../lib/syscalls.hpp"
+#include "../libraries/syscalls.hpp"
 
 using namespace std;
 

@@ -1,0 +1,2 @@
+#!/microos/system/term
+read /microos/log/init-log

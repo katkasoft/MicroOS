@@ -1,0 +1,91 @@
+MicroOS v0.2 help. Commands:
+
+Term:
+clear - clear terminal
+exit - exit term
+pcd - print current directory
+gtd [path] - go to directory
+echo [string] - display string
+
+System:
+poweroff - power off computer
+restart - restart computer
+sync - sync disks
+
+Info:
+info - get general information about system
+sys-stat [args] - get information about usage of resources
+os-info [args] - get information about OS version and kernel
+hw-info [args] - get information about hardware
+kernel-log - show kernel log
+
+Files:
+file-stat [file] [args] - show file stats
+create file [filename] - create file
+read [file] - read file content
+write [file] - write to file (TUI)
+writeto [file] [content] - write to file (CLI)
+copy [file] - copy file
+paste [file] - paste file
+cut [file] - cut file to move it
+rename [oldname] [newname] - rename file
+del [file] - delete file
+moveto [file] [path] - move file
+chperm [file] [permissions] - change permissions of file
+find [file] - find file
+find-by-content [dir] [content] - find file by content
+find-in-file [file] [content] - find content in file
+
+Directories:
+dir-stat - show directory stats
+sd [dir] [args] - scan directory
+rename [oldname] [newname] - rename directory
+create dir [name] - create directory
+copydir [dir] [destitation] - copy direcrory
+movedir [dir] [destitation] - move directory
+deldir [dir] - delete directory
+chperm [dir] [permissions] - change permissions of directory
+find [dir] - find directory
+
+Processes:
+stop [pid] [sig] - stop process
+stop-by-name [process] [sig] - stop process by name
+lp - list processes
+
+Disks:
+mount [disk] [path] - mount disk
+list-disks - list all disks
+disk-usage - display disk usage
+disk-free - display free space on disk
+
+Scripts:
+term [script] - execute terminal script
+syscall-lang [script] - execute script in syscall language
+
+Apps:
+edit [file] - edit file in text editor
+reader [file] - read file in TUI reader
+monitor - system resources and processes live monitor
+calc - TUI calculator
+calc [expression] - calculate expression
+calc [-c/--cli/cli] - enter calculator command line
+tictactoe - play tictactoe game
+
+System scripts:
+/microos/system/services.msh - services script
+/microos/system/start.msh - start script
+/microos/files/term-onstart.msh - term onstart script
+
+System directories:
+
+Kernel:
+/sys - сonfiguration and management of hardware drivers and kernel subsystems
+/proc - real-time kernel data, system metrics, and active process states
+/dev - direct access points to hardware components
+
+MicroOS:
+/microos/commands - core commands 
+/microos/apps - user apps
+/microos/system - programs, necessary for system work
+/microos/files - MicroOS files, needed for programs, can be edited.
+/microos/log - system logs

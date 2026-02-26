@@ -7,7 +7,7 @@
 using namespace std;
 
 string microos_ver() {
-    ifstream verFile("/etc/microos-ver.txt");
+    ifstream verFile("/microos/files/microos-ver.txt");
     if (!verFile.is_open()) return "error";
     stringstream buffer;
     buffer << verFile.rdbuf();

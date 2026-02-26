@@ -11,7 +11,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is_interactive: bool, is_fork: bool) -> bool {
-    let path_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/sbin/services"];
+    let path_dirs = ["/microos/commands", "/microos/system", "/microos/apps", "/microos/services"];
 
     match cmd_name {
         "exit" => return false,
@@ -59,14 +59,14 @@ fn exec_command(cmd_name: &str, args: &[&str], interrupted: &Arc<AtomicBool>, is
         }
 
         "help" | "commands" => {
-            match File::open("/etc/help.txt") {
+            match File::open("/microos/files/help.txt") {
                 Ok(mut file) => {
                     let mut content = String::new();
                     if file.read_to_string(&mut content).is_ok() {
                         println!("{}", content);
                     }
                 }
-                Err(_) => println!("term: help file not found in /etc/help.txt"),
+                Err(_) => println!("term: help file not found in /microos/files/help.txt"),
             }
         }
 
@@ -125,11 +125,11 @@ fn execute_script(file_path: &str, mode: &str, interrupted: &Arc<AtomicBool>) {
         Ok(f) => f,
         Err(e) => {
             if is_start_mode {
-                eprintln!("[START]: fatal error: could not open /sbin/start.msh: {}. System is unable to load correctly.", e);
+                eprintln!("[START]: fatal error: could not open /microos/system/start.msh: {}. System is unable to load correctly.", e);
                 println!("[START]: launching term...");
-                let _ = Command::new("/sbin/term").spawn().expect("[START]: failed to load term");
+                let _ = Command::new("/microos/system/term").spawn().expect("[START]: failed to load term");
             } else if is_services_mode {
-                eprintln!("[SERVICES]: fatal error: could not open /sbin/services.msh script. System is unable to load services.");
+                eprintln!("[SERVICES]: fatal error: could not open /microos/system/services.msh script. System is unable to load services.");
             } else {
                 eprintln!("term: could not open script {}: {}", file_path, e);
             }
@@ -193,9 +193,9 @@ fn main() {
         }
         
         let file_path = if start_mode {
-            "/sbin/start.msh"
+            "/microos/system/start.msh"
         } else if services_mode {
-            "/sbin/services.msh"
+            "/microos/system/services.msh"
         } else {
             &args_os[1]
         };
@@ -206,7 +206,7 @@ fn main() {
             execute_script(file_path, "custom", &interrupted);
         }
     } else {
-        execute_script("/etc/term-onstart.msh", "custom", &interrupted);
+        execute_script("/microos/files/term-onstart.msh", "custom", &interrupted);
         let mut rl = match DefaultEditor::new() {
             Ok(editor) => Some(editor),
             Err(_) => {

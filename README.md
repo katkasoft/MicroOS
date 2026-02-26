@@ -34,7 +34,7 @@ dd if=microos-v0.1.iso of=/dev/sdX bs=4M status=progress
 Replace `/dev/sdX` with your USB device (e.g., `/dev/sdb`).
 
 **Windows:**
-Use [Rufus](https://rufus.ie/) or [Balena Etcher](https://www.balena.io/etcher/).
+Use [Rufus](https://rufus.ie/) or [Balena Etcher](https://www.balena.io/microos/filesher/).
 
 ### Boot and Use
 1. Insert USB drive and boot from it
@@ -90,7 +90,7 @@ Processes:
 stop [pid] [sig] - stop process
 lp - list processes
 
-To see all type sd /bin or sd /usr/bin
+To see all type sd /microos/commands or sd /usr/microos/commands
 ```
 
 ## Development Status

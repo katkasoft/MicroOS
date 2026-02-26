@@ -7,7 +7,7 @@
 #include <sstream>
 #include <poll.h>
 #include <chrono>
-#include "../../lib/calc.hpp"
+#include "../libraries/calc.hpp"
 
 using namespace std;
 

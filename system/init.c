@@ -40,13 +40,13 @@ int main() {
     if (mount("devtmpfs", "/dev", "devtmpfs", 0, NULL) < 0) 
         printf("[INIT]: error mounting /dev: %s\n", strerror(errno));
     
-    log_fd = open("/var/log/init-log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+    log_fd = open("/microos/log/init-log", O_WRONLY | O_CREAT | O_APPEND, 0644);
     if (log_fd < 0) {
         printf("[INIT]: error opening log file: %s\n", strerror(errno));
     }
 
     init_log("[INIT]: forking for services...\n");
-    char* service_args[] = {(char*)"/sbin/term", (char*)"services", NULL};
+    char* service_args[] = {(char*)"/microos/system/term", (char*)"services", NULL};
     if (fork() == 0) {
         execv(service_args[0], service_args);
         _exit(1);
@@ -79,10 +79,10 @@ int main() {
             }
 
             init_log("[INIT]: executing start\n");
-            char *args[] = {"/sbin/term", "start", NULL};
-            execv("/sbin/term", args);
+            char *args[] = {"/microos/system/term", "start", NULL};
+            execv("/microos/system/term", args);
             
-            init_log("[INIT]: execv /sbin/term start failed: %s\n", strerror(errno));
+            init_log("[INIT]: execv /microos/system/term start failed: %s\n", strerror(errno));
             exit(1);
         } else {
             int status;
