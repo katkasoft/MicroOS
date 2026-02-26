@@ -71,6 +71,9 @@ calc [expression] - calculate expression
 calc [-c/--cli/cli] - enter calculator command line
 tictactoe - play tictactoe game
 
+Time:
+time - show full time and date
+
 System scripts:
 /microos/system/services.msh - services script
 /microos/system/start.msh - start script
