@@ -8,12 +8,14 @@
 
 using namespace std;
 
+vector<string> path = {"/microos/commands", "/microos/system", "/microos/system/services", "/microos/apps"};
+
 int launch_command(string command, bool wait = true) {
     stringstream ss(command);
     vector<string> tokens;
     string w;
     while (ss >> w) tokens.push_back(w);
-    if (tokens.empty()) return -1;
+    if (tokens.empty()) return 1;
     vector<char*> args;
     for (auto& s : tokens) {
         args.push_back(&s[0]);
